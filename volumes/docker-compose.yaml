@@ -1,4 +1,4 @@
-# docker compose up -d redis
+# docker compose up -d redis mongodb
 version: "3.9"
 services:
   redis:
@@ -10,3 +10,12 @@ services:
     command: redis-server --loglevel warning
     volumes:
       - ./docker-volumes/cache:/data
+
+  mongodb:
+    container_name: mongodb_container
+    image: mongo:latest
+    restart: always
+    ports:
+      - 27017:27017
+    volumes:
+      - ./docker-volumes/data:/data/db
