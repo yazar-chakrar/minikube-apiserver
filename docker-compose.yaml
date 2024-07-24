@@ -1,65 +1,69 @@
-# docker compose up -d redis mongodb mysql postgres rabbitmq elasticsearch
-version: "3.9"
+# docker compose up -d redis mongodb mysql postgres rabbitmq elasticsearch kibana
+version: "3.8"
+
+name: brikoula-app
 services:
   redis:
     container_name: redis_container
-    image: redis:alpine
+    image: redis:7.2.5-alpine
     restart: always
+    env_file:
+      - ./env/redis.dev.env
     ports:
-      - "6379:6379"
+      - $REDIS_PORT:$REDIS_DOCKER_PORT
     command: redis-server --loglevel warning
     volumes:
-      - ./docker-volumes/cache:/data
+      - ./volumes/docker-volumes/cache:/data
 
   mongodb:
     container_name: mongodb_container
-    image: mongo:latest
+    image: mongo:7.0.4
     restart: always
     ports:
-      - 27017:27017
+      - $MONGODB_PORT:$MONGODB_DOCKER_PORT
     volumes:
-      - ./docker-volumes/data:/data/db
+      - ./volumes/docker-volumes/data:/data/db
 
   mysql:
     container_name: mysql_container
-    image: mysql
+    image: mysql:8.0.31
     command: --default-authentication-plugin=mysql_native_password
     restart: always
     environment:
-      - MYSQL_USER=brikoula
-      - MYSQL_DATABASE=brikoula_auth
-      - MYSQL_ROOT_PASSWORD=api
-      - MYSQL_PASSWORD=api
+      - MYSQL_USER=$MYSQL_USER
+      - MYSQL_DATABASE=$MYSQL_DATABASE
+      - MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD
+      - MYSQL_PASSWORD=$MYSQL_PASSWORD
     ports:
-      - "3306:3306"
+      - "${MYSQL_PORT}:${MYSQL_DOCKER_PORT}"
     volumes:
-      - ./docker-volumes/mysql:/var/lib/mysql
+      - ./volumes/docker-volumes/mysql:/var/lib/mysql
 
   postgres:
     container_name: postgres_container
-    image: postgres
+    image: postgres:16.0
     restart: always
     environment:
-      - POSTGRES_USER=brikoula
-      - POSTGRES_PASSWORD=api
-      - POSTGRES_DB=brikoula_pgdb
+      - POSTGRES_USER=$POSTGRES_USER
+      - POSTGRES_PASSWORD=$POSTGRES_PASSWORD
+      - POSTGRES_DB=$POSTGRES_DB
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT}:${POSTGRES_DOCKER_PORT}"
     volumes:
-      - ./docker-volumes/postgres:/var/lib/postgresql
+      - ./volumes/docker-volumes/postgres:/var/lib/postgresql
 
   rabbitmq:
     container_name: rabbitmq_container
     image: rabbitmq:3.13-rc-management-alpine
     restart: always
     environment:
-      - RABBITMQ_DEFAULT_USER=brikoula
-      - RABBITMQ_DEFAULT_PASS=brikoulapass
+      - RABBITMQ_DEFAULT_USER=$RABBITMQ_DEFAULT_USER
+      - RABBITMQ_DEFAULT_PASS=$RABBITMQ_DEFAULT_PASS
     ports:
       # AMQP protocol port
-      - "5672:5672"
+      - "${RABBITMQ_PROTOCOL_PORT}:${RABBITMQ_DOCKER_PROTOCOL_PORT}"
       # Management UI
-      - "15672:15672"
+      - "${RABBITMQ_MNG_PORT}:${RABBITMQ_DOCKER_MNG_PORT}"
 
   elasticsearch:
     container_name: elasticsearch_container
@@ -77,12 +81,12 @@ services:
       xpack.monitoring.collection.enabled: "true"
       xpack.security.enrollment.enabled: "true"
       xpack.security.authc.token.enabled: "true"
-      ELASTIC_PASSWORD: admin1234
+      ELASTIC_PASSWORD: $ELASTIC_PASSWORD
     ports:
-      - 9300:9300
-      - 9200:9200
+      - $ELASTICSEARCH_PORT:$ELASTICSEARCH_DOCKER_PORT
+      - $ELASTICSEARCH_HOST:$ELASTICSEARCH_DOCKER_HOST
     volumes:
-      - ./docker-volumes/elasticsearch-data:/usr/share/elasticsearch/data
+      - ./volumes/docker-volumes/elasticsearch-data:/usr/share/elasticsearch/data
     networks:
       - elastic
 
