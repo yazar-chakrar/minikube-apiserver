@@ -1,0 +1,10 @@
+# compiled output
+/volumes/docker-volumes
+
+# OS
+.DS_Store
+
+# ENV
+/env
+.env
+

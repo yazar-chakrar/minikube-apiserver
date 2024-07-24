@@ -1,0 +1,114 @@
+# docker compose up -d redis mongodb mysql postgres rabbitmq elasticsearch kibana
+version: "3.8"
+
+name: brikoula-app
+services:
+  redis:
+    container_name: redis_container
+    image: redis:7.2.5-alpine
+    restart: always
+    env_file:
+      - ./env/redis.dev.env
+    ports:
+      - $REDIS_PORT:$REDIS_DOCKER_PORT
+    command: redis-server --loglevel warning
+    volumes:
+      - ./volumes/docker-volumes/cache:/data
+
+  mongodb:
+    container_name: mongodb_container
+    image: mongo:7.0.4
+    restart: always
+    ports:
+      - $MONGODB_PORT:$MONGODB_DOCKER_PORT
+    volumes:
+      - ./volumes/docker-volumes/data:/data/db
+
+  mysql:
+    container_name: mysql_container
+    image: mysql:8.0.31
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      - MYSQL_USER=$MYSQL_USER
+      - MYSQL_DATABASE=$MYSQL_DATABASE
+      - MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD
+      - MYSQL_PASSWORD=$MYSQL_PASSWORD
+    ports:
+      - "${MYSQL_PORT}:${MYSQL_DOCKER_PORT}"
+    volumes:
+      - ./volumes/docker-volumes/mysql:/var/lib/mysql
+
+  postgres:
+    container_name: postgres_container
+    image: postgres:16.0
+    restart: always
+    environment:
+      - POSTGRES_USER=$POSTGRES_USER
+      - POSTGRES_PASSWORD=$POSTGRES_PASSWORD
+      - POSTGRES_DB=$POSTGRES_DB
+    ports:
+      - "${POSTGRES_PORT}:${POSTGRES_DOCKER_PORT}"
+    volumes:
+      - ./volumes/docker-volumes/postgres:/var/lib/postgresql
+
+  rabbitmq:
+    container_name: rabbitmq_container
+    image: rabbitmq:3.13-rc-management-alpine
+    restart: always
+    environment:
+      - RABBITMQ_DEFAULT_USER=$RABBITMQ_DEFAULT_USER
+      - RABBITMQ_DEFAULT_PASS=$RABBITMQ_DEFAULT_PASS
+    ports:
+      # AMQP protocol port
+      - "${RABBITMQ_PROTOCOL_PORT}:${RABBITMQ_DOCKER_PROTOCOL_PORT}"
+      # Management UI
+      - "${RABBITMQ_MNG_PORT}:${RABBITMQ_DOCKER_MNG_PORT}"
+
+  elasticsearch:
+    container_name: elasticsearch_container
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.14.3
+    restart: always
+    environment:
+      ES_JAVA_OPTS: -Xmx1g -Xms1g
+      bootstrap.memory_lock: "true"
+      discovery.type: single-node
+      network.host: 0.0.0.0
+      transport.host: 127.0.0.1
+      http.host: 0.0.0.0
+      xpack.security.enabled: "false"
+      xpack.security.authc.api_key.enabled: "true"
+      xpack.monitoring.collection.enabled: "true"
+      xpack.security.enrollment.enabled: "true"
+      xpack.security.authc.token.enabled: "true"
+      ELASTIC_PASSWORD: $ELASTIC_PASSWORD
+    ports:
+      - $ELASTICSEARCH_PORT:$ELASTICSEARCH_DOCKER_PORT
+      - $ELASTICSEARCH_HOST:$ELASTICSEARCH_DOCKER_HOST
+    volumes:
+      - ./volumes/docker-volumes/elasticsearch-data:/usr/share/elasticsearch/data
+    networks:
+      - elastic
+
+  kibana:
+    container_name: kibana_container
+    image: docker.elastic.co/kibana/kibana:8.14.3
+    restart: always
+    environment:
+      - ELASTICSEARCH_HOSTS=$ELASTICSEARCH_HOSTS
+      - ELASTICSEARCH_USERNAME=$ELASTICSEARCH_USERNAME
+      - ELASTICSEARCH_PASSWORD=$ELASTICSEARCH_PASSWORD
+      - ELASTICSEARCH_SERVICEACCOUNT_TOKEN=$ELASTICSEARCH_SERVICEACCOUNT_TOKEN
+      - XPACK_FLEET_AGENTS_ELASTICSEARCH_HOSTS=$XPACK_FLEET_AGENTS_ELASTICSEARCH_HOSTS
+    ports:
+      - $KIBANA_PORT:$KIBANA_DOCKER_PORT
+    networks:
+      - elastic
+    volumes:
+      - ./volumes/kibana.yml/:/usr/share/kibana/config/kibana.yml:ro
+    depends_on:
+      - elasticsearch
+
+networks:
+  elastic:
+    name: elastic
