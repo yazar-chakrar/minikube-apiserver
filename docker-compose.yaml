@@ -1,14 +1,12 @@
 # docker compose up -d redis mongodb mysql postgres rabbitmq elasticsearch kibana
 version: "3.8"
 
-name: brikoula-app
+name: brikoula-apps
 services:
   redis:
     container_name: redis_container
     image: redis:7.2.5-alpine
     restart: always
-    env_file:
-      - ./env/redis.dev.env
     ports:
       - $REDIS_PORT:$REDIS_DOCKER_PORT
     command: redis-server --loglevel warning
@@ -76,7 +74,7 @@ services:
       network.host: 0.0.0.0
       transport.host: 127.0.0.1
       http.host: 0.0.0.0
-      xpack.security.enabled: "false"
+      xpack.security.enabled: "true"
       xpack.security.authc.api_key.enabled: "true"
       xpack.monitoring.collection.enabled: "true"
       xpack.security.enrollment.enabled: "true"
@@ -85,6 +83,8 @@ services:
     ports:
       - $ELASTICSEARCH_PORT:$ELASTICSEARCH_DOCKER_PORT
       - $ELASTICSEARCH_HOST:$ELASTICSEARCH_DOCKER_HOST
+    expose:
+      - "9200"
     volumes:
       - ./volumes/docker-volumes/elasticsearch-data:/usr/share/elasticsearch/data
     networks:
@@ -95,11 +95,11 @@ services:
     image: docker.elastic.co/kibana/kibana:8.14.3
     restart: always
     environment:
-      - ELASTICSEARCH_HOSTS=$ELASTICSEARCH_HOSTS
+      - ELASTICSEARCH_HOSTS=["http://elasticsearch_container:9200"]
       - ELASTICSEARCH_USERNAME=$ELASTICSEARCH_USERNAME
       - ELASTICSEARCH_PASSWORD=$ELASTICSEARCH_PASSWORD
       - ELASTICSEARCH_SERVICEACCOUNT_TOKEN=$ELASTICSEARCH_SERVICEACCOUNT_TOKEN
-      - XPACK_FLEET_AGENTS_ELASTICSEARCH_HOSTS=$XPACK_FLEET_AGENTS_ELASTICSEARCH_HOSTS
+      - XPACK_FLEET_AGENTS_ELASTICSEARCH_HOSTS=["http://elasticsearch_container:9200"]
     ports:
       - $KIBANA_PORT:$KIBANA_DOCKER_PORT
     networks:
@@ -108,6 +108,26 @@ services:
       - ./volumes/kibana.yml/:/usr/share/kibana/config/kibana.yml:ro
     depends_on:
       - elasticsearch
+
+  apmServer:
+    container_name: apm_server_container
+    image: docker.elastic.co/apm/apm-server:8.12.2
+    ports:
+      - $APM_PORT:$APM_DOCKER_PORT
+    volumes:
+      - ./volumes/apm-server.yml:/usr/share/apm-server/apm-server.yml:ro
+    networks:
+      - elastic
+    command: >
+      apm-server -e
+        -E apm-server.rum.enabled=true
+        -E setup.kibana.host=kibana_container:5601
+        -E setup.template.settings.index.number_of_replicas=0
+        -E apm-server.kibana.enabled=true
+        -E apm-server.kibana.host=kibana_container:5601
+        -E apm-server.kibana.protocol=http
+        -E strict.perms=false
+        -E apm-server.auth.anonymous.enabled=true
 
 networks:
   elastic:

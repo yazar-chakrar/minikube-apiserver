@@ -1,5 +1,6 @@
 # compiled output
 /volumes/docker-volumes
+/services
 
 # OS
 .DS_Store
@@ -7,4 +8,4 @@
 # ENV
 /env
 .env
-
+secret.md
