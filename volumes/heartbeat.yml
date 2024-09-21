@@ -1,0 +1,80 @@
+heartbeat.config.monitors:
+  path: ${path.config}/monitors.d/*.yml
+  reload.enabled: false
+  reload.period: 5s
+
+heartbeat.monitors:
+  - type: http
+    id: brikoula-api-gateway
+    name: Brikoula API Gateway Service
+    schedule: "@every 5s"
+    hosts: ["http://127.0.0.1:4000/health"]
+    check.request.method: GET
+    check.response.status: [200]
+
+  - type: http
+    id: brikoula-notification
+    name: Brikoula Notification Service
+    schedule: "@every 5s"
+    hosts: ["http://localhost:4001/notification-health"]
+    check.request.method: GET
+    check.response.status: [200]
+
+  - type: http
+    id: brikoula-auth
+    name: Brikoula Auth Service
+    schedule: "@every 5s"
+    hosts: ["http://127.0.0.1:4002/health"]
+    check.request.method: GET
+    check.response.status: [200]
+
+  - type: http
+    id: brikoula-users
+    name: Brikoula Users Service
+    schedule: "@every 5s"
+    hosts: ["http://127.0.0.1:4003/health"]
+    check.request.method: GET
+    check.response.status: [200]
+
+  - type: http
+    id: brikoula-gigs
+    name: Brikoula Gigs Service
+    schedule: "@every 5s"
+    hosts: ["http://127.0.0.1:4004/health"]
+    check.request.method: GET
+    check.response.status: [200]
+
+  - type: http
+    id: brikoula-chat
+    name: Brikoula Chat Service
+    schedule: "@every 5s"
+    hosts: ["http://127.0.0.1:4005/health"]
+    check.request.method: GET
+    check.response.status: [200]
+
+  - type: http
+    id: brikoula-orders
+    name: Brikoula Orders Service
+    schedule: "@every 5s"
+    hosts: ["http://127.0.0.1:4006/health"]
+    check.request.method: GET
+    check.response.status: [200]
+
+  - type: http
+    id: brikoula-reviews
+    name: Brikoula Reviews Service
+    schedule: "@every 5s"
+    urls: ["http://127.0.0.1:4007/review-health"]
+    check.request.method: GET
+    check.response.status: [200]
+
+processors:
+  - add_cloud_metadata: ~
+  - add_docker_metadata: ~
+
+monitoring.enabled: true
+
+output.elasticsearch:
+  hosts: ["http://elasticsearch_container:9200"]
+  username: "elastic"
+  password: "admin1234"

@@ -129,6 +129,41 @@ services:
         -E strict.perms=false
         -E apm-server.auth.anonymous.enabled=true
 
+  metricbeat:
+    container_name: metricbeat_container
+    image: docker.elastic.co/beats/metricbeat:8.14.3
+    user: root
+    ports:
+      - 5066:5066
+    networks:
+      - elastic
+    volumes:
+      - ./volumes/metricbeat.yml/:/usr/share/metricbeat/metricbeat.yml:ro
+      # docker module
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # system module
+      - /sys/fs/cgroup:/hostfs/sys/fs/cgroup:ro
+      - /proc:/hostfs/proc:ro
+      - /:/hostfs:ro
+    command: ["--strict.perms=false", "-system.hostfs=/hostfs"]
+    depends_on:
+      - elasticsearch
+
+  heartbeat:
+    container_name: heartbeat_container
+    image: docker.elastic.co/beats/heartbeat:8.14.3
+    user: root
+    hostname: heartbeat
+    cap_add:
+      - NET_RAW
+    networks:
+      - elastic
+    command: ["--strict.perms=false"]
+    volumes:
+      - ./volumes/heartbeat.yml:/usr/share/heartbeat/heartbeat.yml:ro
+    depends_on:
+      - elasticsearch
+
 networks:
   elastic:
     name: elastic
