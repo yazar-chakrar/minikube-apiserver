@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: app-mongo
+  namespace: production
+spec:
+  type: ClusterIP
+  selector:
+    app: app-mongo
+  ports:
+    - name: app-mongo
+      port: 27017
+      targetPort: 27017
